@@ -5,15 +5,26 @@ import * as React from 'react'
 import {fetchPokemon, PokemonDataView, PokemonErrorBoundary} from '../pokemon'
 import Spinner from "../suspense-list/spinner";
 
-let pokemon, error;
+const createResource = (promise) => {
+    let status = 'pending';
+    let result = promise
+        .then(data => { status = 'resolved'; result = data; })
+        .catch(err => { status = 'rejected'; result = err });
 
-const pokemonPromise = fetchPokemon("pikacha")
-    .then(data => pokemon = data)
-    .catch(err => error = err);
+    return {
+        read: () => {
+            if (status === 'pending') throw result;
+            if (status === 'rejected') throw result;
+            if (status === 'resolved') return result;
+        }
+    }
+}
+
+const pokemonResource = createResource(fetchPokemon("pikachu"));
 
 function PokemonInfo() {
-    if (error) throw error;
-    if (!pokemon) throw pokemonPromise;
+   const pokemon =  pokemonResource.read();
+
   return (
     <div>
       <div className="pokemon-info__img-wrapper">
